@@ -1,0 +1,338 @@
+<main class="pagina">
+  <div class="cabecalho">
+    <h1>Aprovações Pendentes</h1>
+    <po-button
+      p-label="Sair"
+      p-icon="po-icon-exit"
+      p-kind="tertiary"
+      [p-disabled]="exportando"
+      (p-click)="sair()"
+    ></po-button>
+  </div>
+
+  <po-loading-overlay
+    *ngIf="iniciando"
+    [p-screen-lock]="true"
+    [p-text]="'Carregando os filtros…'"
+  ></po-loading-overlay>
+
+  <p class="erro" *ngIf="erroInicio">{{ erroInicio }}</p>
+
+  <ng-container *ngIf="!iniciando && !erroInicio">
+    <po-accordion class="secao">
+      <po-accordion-item #itemFiltros p-label="Filtros" [p-label-tag]="rotuloPeriodo">
+        <div class="filtros">
+          <po-datepicker-range
+            class="filtro-periodo"
+            name="periodo"
+            p-label="Período do documento"
+            p-additional-help-tooltip="Emissão do pedido, digitação da nota ou inclusão da SP"
+            [p-min-date]="dataMinima"
+            [p-disabled]="consultando"
+            [(ngModel)]="periodo"
+          ></po-datepicker-range>
+          <po-select
+            class="filtro-empresa"
+            name="empresa"
+            p-label="Empresa"
+            [p-options]="opcoesEmpresa"
+            [ngModel]="empresa"
+            (p-change)="aoMudarEmpresa($event)"
+          ></po-select>
+          <po-select
+            class="filtro-curto"
+            name="filial"
+            p-label="Filial"
+            [p-options]="opcoesFilial"
+            [ngModel]="filial"
+            (p-change)="aoMudarFilial($event)"
+          ></po-select>
+          <po-select
+            class="filtro-curto"
+            name="tipo"
+            p-label="Tipo"
+            [p-options]="opcoesTipo"
+            [ngModel]="tipo"
+            (p-change)="aoMudarTipo($event)"
+          ></po-select>
+          <po-select
+            class="filtro-curto"
+            name="classificacao"
+            p-label="Classificação da nota"
+            p-additional-help-tooltip="Classificada ou não classificada mostra só as notas fiscais"
+            [p-options]="opcoesClassificacao"
+            [ngModel]="classificacaoFiltro"
+            (p-change)="aoMudarClassificacao($event)"
+          ></po-select>
+          <po-input
+            class="filtro-curto"
+            name="aprovador"
+            p-label="Aprovador"
+            p-placeholder="Parte do nome"
+            [p-optional]="true"
+            [p-clean]="true"
+            [(ngModel)]="aprovador"
+            (p-change-model)="aplicarFiltros()"
+          ></po-input>
+          <div class="filtro-acao">
+            <po-button
+              p-label="Consultar"
+              p-icon="po-icon-search"
+              p-kind="primary"
+              [p-loading]="consultando"
+              (p-click)="consultar()"
+            ></po-button>
+          </div>
+        </div>
+      </po-accordion-item>
+    </po-accordion>
+
+    <div class="leitura" *ngIf="ultimaLeitura" role="status">
+      <span>{{ textoUltimaLeitura }}</span>
+      <po-button
+        p-label="Atualizar"
+        p-icon="po-icon-refresh"
+        p-kind="tertiary"
+        p-tooltip="Lê de novo o Protheus com o mesmo período"
+        [p-loading]="consultando"
+        (p-click)="consultar()"
+      ></po-button>
+    </div>
+
+    <section class="indicadores" aria-label="Indicadores das pendências">
+      <button
+        type="button"
+        class="indicador"
+        title="Documentos com status Pendente nos filtros atuais; o valor é a soma deles. Clique para ver na tabela."
+        [disabled]="indicadores.pendentes === 0"
+        (click)="aoClicarIndicador('pendentes')"
+      >
+        <span class="indicador-rotulo">Pendentes</span>
+        <span class="indicador-valor">{{ indicadores.pendentes }}</span>
+        <span class="indicador-detalhe">{{ formatarMoeda(indicadores.valorPendente) }} em aberto</span>
+      </button>
+      <button
+        type="button"
+        class="indicador"
+        title="Média, entre os pendentes, dos dias desde que o documento chegou ao aprovador atual. Clique para ver na tabela."
+        [disabled]="indicadores.idadeMedia === null"
+        (click)="aoClicarIndicador('idadeMedia')"
+      >
+        <span class="indicador-rotulo">Idade média</span>
+        <span class="indicador-valor">
+          {{ formatarDias(indicadores.idadeMedia) }}<small *ngIf="indicadores.idadeMedia !== null">dias</small>
+        </span>
+        <span class="indicador-detalhe">desde a chegada no aprovador atual</span>
+      </button>
+      <button
+        type="button"
+        class="indicador"
+        title="O maior número de dias com o aprovador atual entre os pendentes. Clique para ver o documento."
+        [disabled]="indicadores.maisAntiga === null"
+        (click)="aoClicarIndicador('maisAntiga')"
+      >
+        <span class="indicador-rotulo">Mais antiga</span>
+        <span class="indicador-valor">
+          {{ formatarDias(indicadores.maisAntiga) }}<small *ngIf="indicadores.maisAntiga !== null">dias</small>
+        </span>
+        <span class="indicador-detalhe">pendência parada há mais tempo</span>
+      </button>
+      <button
+        type="button"
+        class="indicador"
+        title="Média de dias entre a criação do documento e a última aprovação, nos aprovados do período. Clique para ver na tabela."
+        [disabled]="indicadores.tempoAprovacao === null"
+        (click)="aoClicarIndicador('tempoAprovacao')"
+      >
+        <span class="indicador-rotulo">Tempo até aprovar</span>
+        <span class="indicador-valor">
+          {{ formatarDias(indicadores.tempoAprovacao) }}<small *ngIf="indicadores.tempoAprovacao !== null">dias</small>
+        </span>
+        <span class="indicador-detalhe">média de {{ indicadores.aprovados }} aprovados no período</span>
+      </button>
+      <button
+        type="button"
+        class="indicador"
+        title="Média de dias úteis (sem sábado, domingo e feriados) entre a aprovação final da nota e a classificação dela (no mesmo dia conta 0), nas notas aprovadas e classificadas. Clique para ver na tabela."
+        [disabled]="indicadores.tempoClassificacao === null"
+        (click)="aoClicarIndicador('tempoClassificacao')"
+      >
+        <span class="indicador-rotulo">Tempo até classificar</span>
+        <span class="indicador-valor">
+          {{ formatarDias(indicadores.tempoClassificacao) }}<small *ngIf="indicadores.tempoClassificacao !== null">dias</small>
+        </span>
+        <span class="indicador-detalhe">média de {{ indicadores.classificadas }} notas aprovadas e classificadas</span>
+      </button>
+    </section>
+
+    <po-accordion class="secao">
+      <po-accordion-item
+        p-label="Gráficos"
+        (p-expand)="graficosVisiveis = true"
+        (p-collapse)="graficosVisiveis = false"
+      >
+        <p class="graficos-dica" *ngIf="graficosVisiveis">Clique numa barra, ou num indicador acima, para ver na tabela os documentos que entraram na conta.</p>
+        <div class="graficos" *ngIf="graficosVisiveis">
+          <figure class="grafico grafico-largo">
+            <figcaption>Pendências por aprovador atual</figcaption>
+            <p class="grafico-vazio" *ngIf="categoriasAprovador.length === 0">Nenhuma pendência nos filtros atuais.</p>
+            <po-chart
+              *ngIf="categoriasAprovador.length > 0"
+              [p-type]="tipoBarra"
+              [p-categories]="categoriasAprovador"
+              [p-series]="seriesAprovador"
+              [p-options]="opcoesUmaSerie"
+              [p-height]="320"
+              (p-series-click)="aoClicarAprovador($event)"
+            ></po-chart>
+          </figure>
+          <figure class="grafico">
+            <figcaption>Idade das pendências</figcaption>
+            <po-chart
+              [p-type]="tipoColuna"
+              [p-categories]="categoriasIdade"
+              [p-series]="seriesIdade"
+              [p-options]="opcoesUmaSerie"
+              [p-height]="320"
+              (p-series-click)="aoClicarIdade($event)"
+            ></po-chart>
+          </figure>
+          <figure class="grafico">
+            <figcaption>Status por tipo de documento</figcaption>
+            <po-chart
+              [p-type]="tipoColuna"
+              [p-categories]="categoriasTipo"
+              [p-series]="seriesStatusTipo"
+              [p-options]="opcoesEmpilhado"
+              [p-height]="320"
+              (p-series-click)="aoClicarStatusTipo($event)"
+            ></po-chart>
+          </figure>
+        </div>
+      </po-accordion-item>
+    </po-accordion>
+
+    <div class="barra-tabela">
+      <div class="status-filtro" role="group" aria-label="Filtrar por status">
+        <button
+          *ngFor="let item of contagens"
+          type="button"
+          class="status-botao"
+          [class.ativo]="statusFiltro === item.status"
+          [attr.data-status]="item.status"
+          [attr.aria-pressed]="statusFiltro === item.status"
+          [disabled]="consultando"
+          (click)="aoMudarStatus(item.status)"
+        >
+          <span class="status-rotulo">{{ item.rotulo }}</span>
+          <span class="status-qtd">{{ item.quantidade }}</span>
+        </button>
+      </div>
+      <div class="filtro-grafico" *ngIf="filtroGrafico" role="status">
+        <span>Filtro: <strong>{{ filtroGrafico.descricao }}</strong> · {{ linhasFiltradas.length }}</span>
+        <button type="button" class="filtro-grafico-limpar" aria-label="Limpar o filtro do gráfico" (click)="limparFiltroGrafico()">✕</button>
+      </div>
+      <div class="acoes-tabela">
+        <po-button
+          class="botao-excel"
+          p-label="Exportar"
+          p-icon="an an-microsoft-excel-logo"
+          p-kind="secondary"
+          p-tooltip="Gera o Excel com as linhas filtradas"
+          [p-disabled]="consultando || linhasFiltradas.length === 0"
+          [p-loading]="exportando"
+          (p-click)="exportar()"
+        ></po-button>
+        <po-button
+          p-label="Colunas do Excel"
+          p-icon="an an-list-dashes"
+          p-kind="tertiary"
+          p-tooltip="Escolher quais colunas saem no Excel e em que ordem (salvo para o seu usuário)"
+          (p-click)="prepararOrdemExcel(); modalOrdemExcel.open()"
+        ></po-button>
+      </div>
+    </div>
+
+    <div #areaTabela class="tabela-arrastavel" (mousedown)="iniciarArrasto($event)">
+      <po-table
+        [p-items]="linhasFiltradas"
+        [p-columns]="colunasTabela"
+        [p-height]="520"
+        [p-loading]="consultando"
+        [p-striped]="true"
+        p-spacing="small"
+        [p-sort]="true"
+        [p-literals]="literaisTabela"
+      >
+        <ng-template p-table-row-template let-linha [p-table-row-template-show]="temFluxo">
+          <div class="fluxo">
+            <p class="fluxo-titulo">
+              Fluxo de aprovação<span *ngIf="linha.andamento"> · {{ linha.andamento }}</span>
+            </p>
+            <ol class="fluxo-etapas">
+              <li
+                *ngFor="let etapa of linha.niveis; let i = index"
+                class="fluxo-etapa"
+                [attr.data-situacao]="etapa.situacao"
+                [attr.aria-current]="etapa.situacao === 'PENDENTE' ? 'step' : null"
+              >
+                <span class="fluxo-marca" aria-hidden="true">{{ i + 1 }}</span>
+                <span class="fluxo-texto">
+                  <span class="fluxo-aprovador">{{ etapa.aprovadores }}</span>
+                  <span class="fluxo-situacao">{{ etapa.situacaoDescricao }}</span>
+                  <span class="fluxo-data" *ngIf="etapa.dataTexto">{{ etapa.dataTexto }}</span>
+                  <span class="fluxo-data" *ngIf="etapa.situacao === 'PENDENTE' && linha.pendenteDesde">
+                    desde {{ formatarDataHora(linha.pendenteDesde) }}
+                  </span>
+                </span>
+              </li>
+            </ol>
+          </div>
+        </ng-template>
+      </po-table>
+    </div>
+  </ng-container>
+
+  <po-modal #modalOrdemExcel p-title="Colunas do Excel" p-size="md">
+    <p class="aviso-modal">
+      Marque as colunas que saem no Excel e ajuste a ordem. Fica salvo para o seu usuário. O padrão
+      segue a planilha de status de aprovação que o time já usava; "Aprovador e status por etapa" se abre em
+      duas colunas por etapa do fluxo.
+    </p>
+    <p class="aviso-modal" *ngIf="!usuario" role="status">
+      Usuário não identificado. Abra o relatório pelo Protheus para salvar as colunas.
+    </p>
+    <ol class="ordem-excel">
+      <li *ngFor="let coluna of colunasExcel; let i = index" [class.oculta]="!coluna.incluir">
+        <label>
+          <input type="checkbox" [(ngModel)]="coluna.incluir" [name]="'excel-' + coluna.campo" />
+          {{ coluna.titulo }}
+        </label>
+        <span class="ordem-excel-botoes">
+          <button
+            type="button"
+            [disabled]="i === 0"
+            [attr.aria-label]="'Mover ' + coluna.titulo + ' para cima'"
+            (click)="moverColunaExcel(i, i - 1)"
+          >↑</button>
+          <button
+            type="button"
+            [disabled]="i === colunasExcel.length - 1"
+            [attr.aria-label]="'Mover ' + coluna.titulo + ' para baixo'"
+            (click)="moverColunaExcel(i, i + 1)"
+          >↓</button>
+        </span>
+      </li>
+    </ol>
+    <po-modal-footer>
+      <po-button p-label="Restaurar padrão" p-kind="tertiary" (p-click)="restaurarOrdemExcel()"></po-button>
+      <po-button p-label="Cancelar" p-kind="secondary" (p-click)="modalOrdemExcel.close()"></po-button>
+      <po-button
+        p-label="Salvar"
+        p-kind="primary"
+        [p-disabled]="!usuario"
+        (p-click)="salvarOrdemExcel() && modalOrdemExcel.close()"
+      ></po-button>
+    </po-modal-footer>
+  </po-modal>
+</main>

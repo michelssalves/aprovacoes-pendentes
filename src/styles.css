@@ -1,0 +1,37 @@
+/*
+ * Azul do Protheus no lugar do roxo do tema padrão do PO-UI. Os botões, links, foco e seleção
+ * herdam de --color-brand-01-* (o tema define --color-action-* a partir deles).
+ */
+:root {
+  --color-brand-01-base: #0c9abe;
+  --color-brand-01-dark: #0a7c99;
+  --color-brand-01-darker: #075d73;
+  --color-brand-01-darkest: #043e4d;
+  --color-brand-01-light: #74c6db;
+  --color-brand-01-lighter: #b6e1ec;
+  --color-brand-01-lightest: #e7f5f9;
+}
+
+/*
+ * Verde do Excel no ícone do botão de exportar. Fica aqui (global) porque o ícone é renderizado
+ * dentro do po-button, fora do alcance do CSS encapsulado do componente. Desabilitado, volta ao
+ * cinza do tema.
+ */
+.botao-excel button:not(:disabled) .an-microsoft-excel-logo {
+  color: #217346;
+}
+
+/*
+ * Arrastar a tabela para o lado (app.component.ts, iniciarArrasto). A classe vai no container de
+ * rolagem interno do po-table, fora do alcance do CSS encapsulado do componente.
+ */
+.tabela-arrastavel .po-table-container-overflow,
+.tabela-arrastavel cdk-virtual-scroll-viewport {
+  cursor: grab;
+}
+
+.tabela-arrastavel .tabela-arrastando,
+.tabela-arrastavel .tabela-arrastando * {
+  cursor: grabbing !important;
+  user-select: none;
+}

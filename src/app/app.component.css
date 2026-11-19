@@ -1,0 +1,494 @@
+:host {
+  display: block;
+}
+
+.pagina {
+  min-height: 100vh;
+  padding: 12px 16px;
+  box-sizing: border-box;
+  background: var(--color-neutral-light-00, #fff);
+}
+
+.cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--color-brand-01-base);
+}
+
+.cabecalho h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--color-brand-01-dark);
+}
+
+/* Acordeões de filtros e gráficos, no padrão do relatório de notas (cabeçalho cinza, borda leve). */
+.secao {
+  display: block;
+  margin-bottom: 12px;
+}
+
+:host ::ng-deep .secao .po-accordion-item-header {
+  background: var(--color-neutral-light-05, #f7f9fc);
+  border: 1px solid var(--color-neutral-light-20, #e6e8eb);
+  border-radius: var(--border-radius-md, 8px);
+}
+
+:host ::ng-deep .secao .po-accordion-item-header-title {
+  font-weight: 600;
+}
+
+:host ::ng-deep .secao .po-accordion-item-content {
+  border: 1px solid var(--color-neutral-light-20, #e6e8eb);
+  border-top: none;
+  border-radius: 0 0 var(--border-radius-md, 8px) var(--border-radius-md, 8px);
+  background: var(--color-neutral-light-00, #fff);
+}
+
+/*
+ * Filtros numa faixa so: periodo primeiro (e o unico que vai ao Protheus, junto com Consultar);
+ * empresa, filial, tipo e aprovador filtram na tela. Quebra em mais linhas em tela estreita.
+ */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0 12px;
+}
+
+/* Indicadores: sempre visíveis, entre os dois acordeões. */
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.indicador {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-neutral-light-20, #e6e8eb);
+  border-top: 3px solid var(--color-brand-01-base);
+  border-radius: var(--border-radius-md, 8px);
+  background: var(--color-neutral-light-00, #fff);
+  min-width: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.indicador:hover:not(:disabled) {
+  border-color: var(--color-brand-01-base);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 8%);
+}
+
+.indicador:focus-visible {
+  outline: 2px solid var(--color-brand-01-base);
+  outline-offset: 2px;
+}
+
+.indicador:disabled {
+  cursor: default;
+}
+
+/* Momento da leitura: os números valem para ele; Atualizar repete a consulta. */
+.leitura {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-bottom: 8px;
+  font-size: 0.8125rem;
+  color: var(--color-neutral-dark-70, #4a5c60);
+}
+
+.indicador-rotulo {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-brand-01-dark, #0a7c99);
+}
+
+.indicador-valor {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-neutral-dark-90, #1d2426);
+  font-variant-numeric: tabular-nums;
+}
+
+.indicador-valor small {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-neutral-dark-70, #4a5c60);
+}
+
+.indicador-detalhe {
+  font-size: 0.8125rem;
+  color: var(--color-neutral-dark-70, #4a5c60);
+  overflow-wrap: anywhere;
+}
+
+/* Gráficos: o de aprovadores ocupa a linha toda (nomes longos), os outros dois dividem a seguinte. */
+.graficos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.grafico {
+  margin: 0;
+  min-width: 0;
+}
+
+.grafico-largo {
+  grid-column: 1 / -1;
+}
+
+.grafico figcaption {
+  margin-bottom: 4px;
+  font-weight: 600;
+  color: var(--color-neutral-dark-90, #1d2426);
+}
+
+.grafico-vazio {
+  margin: 0;
+  padding: 24px 0;
+  color: var(--color-neutral-dark-70, #4a5c60);
+}
+
+@media (max-width: 900px) {
+  .graficos {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* po-chart lê estes tokens ao desenhar (mesmo ajuste do relatório de notas). */
+:host ::ng-deep po-chart {
+  --color-chart-background-color: var(--color-neutral-light-00);
+  --color-chart-axis-label-text: var(--color-neutral-dark-90);
+  --color-chart-legend-text: var(--color-neutral-dark-90);
+  --color-chart-axis-stroke: var(--color-neutral-light-30);
+}
+
+.filtro-periodo {
+  flex: 1 1 280px;
+  max-width: 320px;
+}
+
+.filtro-empresa {
+  flex: 1 1 200px;
+  max-width: 280px;
+}
+
+.filtro-curto {
+  flex: 1 1 150px;
+  max-width: 200px;
+}
+
+/*
+ * Os campos do PO-UI reservam --spacing-xs abaixo da caixa (area da mensagem de erro). Sem a
+ * mesma folga, o botao alinha pelo fim dessa area e fica 8px abaixo dos campos.
+ */
+.filtro-acao {
+  margin-left: auto;
+  margin-bottom: var(--spacing-xs, 0.5rem);
+}
+
+/* Barra acima da tabela: status com contagem a esquerda, acoes do Excel a direita. */
+.barra-tabela {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 8px;
+}
+
+.status-filtro {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.status-botao {
+  --status-cor: var(--color-brand-01-base);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 4px 12px;
+  border: 1px solid var(--color-neutral-light-30, #c9ced4);
+  border-radius: 999px;
+  background: var(--color-neutral-light-00, #fff);
+  color: var(--color-neutral-dark-80, #2c3739);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+/* Mesmas cores de status dos gráficos (COR_STATUS no componente). */
+.status-botao[data-status='PENDENTE'] { --status-cor: #fab219; }
+.status-botao[data-status='APROVADO'] { --status-cor: #0ca30c; }
+.status-botao[data-status='REJEITADO'] { --status-cor: #d03b3b; }
+.status-botao[data-status='BLOQUEADO'] { --status-cor: #ec835a; }
+
+.status-botao::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--status-cor);
+}
+
+.status-botao[data-status='todos']::before {
+  display: none;
+}
+
+.status-botao:hover:not(:disabled) {
+  border-color: var(--status-cor);
+}
+
+.status-botao:focus-visible {
+  outline: 2px solid var(--color-brand-01-base);
+  outline-offset: 2px;
+}
+
+.status-botao.ativo {
+  border-color: var(--status-cor);
+  box-shadow: inset 0 0 0 1px var(--status-cor);
+  font-weight: 600;
+}
+
+.status-botao:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.status-qtd {
+  min-width: 2ch;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-neutral-dark-70, #4d5a5f);
+}
+
+.graficos-dica {
+  margin: 0 0 8px;
+  font-size: 0.8125rem;
+  color: var(--color-neutral-dark-70, #4a5c60);
+}
+
+/* Recorte vindo do clique no gráfico: chip com o que está aplicado e um botão para limpar. */
+.filtro-grafico {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px 4px 12px;
+  border-radius: 999px;
+  background: var(--color-brand-01-lightest, #e7f5f9);
+  color: var(--color-brand-01-darkest, #043e4d);
+  font-size: 0.875rem;
+}
+
+.filtro-grafico-limpar {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.filtro-grafico-limpar:hover,
+.filtro-grafico-limpar:focus-visible {
+  background: var(--color-brand-01-lighter, #b6e1ec);
+  outline: none;
+}
+
+/*
+ * Fluxo de aprovação na linha aberta: uma trilha de etapas em ordem, com a largura da área
+ * visível; acompanha a rolagem lateral da tabela (--rolagem-x) para continuar à vista.
+ */
+.fluxo {
+  transform: translateX(var(--rolagem-x, 0));
+  box-sizing: border-box;
+  width: min(100%, calc(100vw - 64px));
+  padding: 12px 16px 16px;
+}
+
+.fluxo-titulo {
+  margin: 0 0 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-neutral-dark-70, #4a5c60);
+}
+
+.fluxo-etapas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fluxo-etapa {
+  --etapa-cor: var(--color-neutral-light-30, #c9ced4);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  flex: 0 1 200px;
+  min-width: 150px;
+  padding-right: 28px;
+}
+
+/* Linha que liga uma etapa à seguinte. */
+.fluxo-etapa:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 13px;
+  left: 34px;
+  right: 8px;
+  height: 2px;
+  background: var(--color-neutral-light-20, #e6e8eb);
+}
+
+.fluxo-etapa[data-situacao='APROVADO'] { --etapa-cor: #0ca30c; }
+.fluxo-etapa[data-situacao='PENDENTE'] { --etapa-cor: #fab219; }
+.fluxo-etapa[data-situacao='REJEITADO'] { --etapa-cor: #d03b3b; }
+.fluxo-etapa[data-situacao='BLOQUEADO'] { --etapa-cor: #ec835a; }
+
+.fluxo-marca {
+  position: relative;
+  z-index: 1;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--etapa-cor);
+  border-radius: 50%;
+  background: var(--color-neutral-light-00, #fff);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-neutral-dark-90, #1d2426);
+}
+
+.fluxo-etapa[data-situacao='APROVADO'] .fluxo-marca,
+.fluxo-etapa[data-situacao='REJEITADO'] .fluxo-marca,
+.fluxo-etapa[data-situacao='BLOQUEADO'] .fluxo-marca {
+  background: var(--etapa-cor);
+  color: #fff;
+}
+
+.fluxo-etapa[data-situacao='PENDENTE'] .fluxo-marca {
+  box-shadow: 0 0 0 4px rgb(250 178 25 / 25%);
+}
+
+.fluxo-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+}
+
+.fluxo-aprovador {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-neutral-dark-90, #1d2426);
+  overflow-wrap: anywhere;
+}
+
+.fluxo-situacao {
+  font-size: 0.8125rem;
+  color: var(--color-neutral-dark-80, #2c3739);
+}
+
+.fluxo-etapa[data-situacao='AUTOMATICO'] .fluxo-situacao,
+.fluxo-etapa[data-situacao='DISPENSADO'] .fluxo-situacao,
+.fluxo-etapa[data-situacao='AGUARDANDO'] .fluxo-situacao {
+  color: var(--color-neutral-dark-70, #4a5c60);
+}
+
+.fluxo-data {
+  font-size: 0.75rem;
+  color: var(--color-neutral-dark-70, #4a5c60);
+  font-variant-numeric: tabular-nums;
+}
+
+.acoes-tabela {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.erro {
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border-radius: var(--border-radius-sm, 4px);
+  background: var(--color-feedback-negative-lightest, #f6e6e5);
+  color: var(--color-feedback-negative-darker, #72211d);
+}
+
+.aviso-modal {
+  margin: 0 0 var(--spacing-xs, 0.5rem);
+}
+
+.ordem-excel {
+  max-height: 50vh;
+  overflow-y: auto;
+  margin: 0;
+  padding-left: 32px;
+}
+
+.ordem-excel li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--color-neutral-light-20, #ddd);
+}
+
+.ordem-excel li.oculta {
+  color: var(--color-neutral-dark-70, #6b6b6b);
+}
+
+.ordem-excel-botoes {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.ordem-excel button {
+  min-width: 36px;
+  min-height: 36px;
+  cursor: pointer;
+}
+
+.ordem-excel label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.ordem-excel input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+}
